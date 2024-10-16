@@ -1,0 +1,134 @@
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <ncurses.h>
+using namespace std;
+
+struct Node
+{
+    char ch;
+    Node *next;
+    Node *prev;
+    Node *up;
+    Node *down;
+    int x_axis;
+    int y_axis;
+};
+
+class maze
+{
+    Node *head;
+
+public:
+    maze()
+    {
+        head = nullptr;
+    }
+
+    void insert(char c, int i, int j)
+    {
+        Node *NN = new Node;
+        NN->ch = c;
+        NN->next = nullptr;
+        NN->prev = nullptr;
+        NN->up = nullptr;
+        NN->down = nullptr;
+        NN->x_axis = i;
+        NN->y_axis = j;
+
+        if (head == nullptr)
+        {
+            head = NN; // First node becomes the head
+        }
+        else
+        {
+            Node *temp = head;
+
+            for (int row = 0; row < i; row++) // going to the exact row where we have to insert next node
+            {
+                temp = temp->down;
+            }
+
+            if (j > 0) // moving in a row and adding node at the end of the row
+            {
+                while (temp->next != nullptr)
+                {
+                    temp = temp->next;
+                }
+                temp->next = NN;
+                NN->prev = temp;
+            }
+            // If j == 0, inserting at the beginning of a new row
+            else
+            {
+                // Find the last node at j=0 index and place new node uder it
+                Node *Upper_node = head;
+                for (int row = 0; row < i - 1; row++)
+                {
+                    Upper_node = Upper_node->down;
+                }
+
+                if (Upper_node != nullptr)
+                {
+                    Upper_node->down = NN;
+                    NN->up = Upper_node;
+                }
+            }
+
+            if (i > 0 && j > 0)
+            {
+                Node *temp_up = head;
+                for (int row = 0; row < i - 1; row++)
+                {
+                    temp_up = temp_up->down;
+                }
+                Node *col_up = temp_up;
+                for (int col = 0; col < j; col++)
+                {
+                    col_up = col_up->next;
+                }
+                col_up->down = NN;
+                NN->up = col_up;
+            }
+        }
+    }
+
+    void insertnodes()
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            for (int j = 0; j < 10; j++)
+            {
+                insert('#', i, j);
+            }
+        }
+    }
+
+    void displayMaze()
+    {
+        clear();
+        initscr();
+        Node *row = head; // Start from the head of the grid
+
+        for (int i = 0; i < 10; i++)
+        {
+            Node *temp = row;
+            for (int j = 0; j < 10; j++)
+            {
+                printw("%c ", temp->ch); // Use printw for PDCurses output
+                temp = temp->next;
+            }
+            row = row->down; // Move to the next row
+            printw("\n");
+        }
+
+        refresh();
+    }
+};
+
+int main()
+{
+    maze m;
+    m.insertnodes();
+    m.displayMaze();
+}
