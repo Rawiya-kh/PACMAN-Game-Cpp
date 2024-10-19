@@ -53,7 +53,6 @@ public:
         }
         moveee *temp = top;
         top = temp->next;
-        temp->next = nullptr;
         delete temp;
     }
     int top_x()
@@ -66,12 +65,7 @@ public:
     }
     bool isempty()
     {
-        if (top == nullptr)
-        {
-            return true;
-        }
-        else
-            return false;
+        return top == nullptr;
     }
 };
 class maze
@@ -79,22 +73,28 @@ class maze
     undo stack;
     Node *head;
     Node *p;
-    int k_x, k_y;
-    int d_x, d_y;
-    int p_x, p_y;
-    int dx, dy, d;
+    Node *k;
+    Node *d;
+    int b_x, b_y;
+    int dx, dy, i_d, move_d;
     bool keyfound;
     bool door;
-    int count = 5;
-    int undo_count = 0;
+    int count;
+    int undo_count;
+    int total_moves;
 
 public:
     maze()
     {
         head = nullptr;
         p = nullptr;
-        keyfound = 0;
-        door = 0;
+        k = nullptr;
+        d = nullptr;
+        keyfound = false;
+        door = false;
+        count = 5;
+        undo_count = 0;
+        total_moves = 0;
     }
 
     void insert(char c, int i, int j)
@@ -180,44 +180,56 @@ public:
     {
         if (m == KEY_RIGHT)
         {
+
             if (p->next != nullptr)
             {
+                total_moves--;
                 p->ch = '.';
                 p = p->next;
                 p->ch = 'P';
             }
         }
-        if (m == KEY_UP)
+        else if (m == KEY_UP)
         {
+
             if (p->up != nullptr)
             {
+                total_moves--;
                 p->ch = '.';
                 p = p->up;
                 p->ch = 'P';
             }
         }
-        if (m == KEY_DOWN)
+        else if (m == KEY_DOWN)
         {
+
             if (p->down != nullptr)
             {
+                total_moves--;
                 p->ch = '.';
                 p = p->down;
                 p->ch = 'P';
             }
         }
-        if (m == KEY_LEFT)
+        else if (m == KEY_LEFT)
         {
+
             if (p->prev != nullptr)
             {
+                total_moves--;
                 p->ch = '.';
                 p = p->prev;
                 p->ch = 'P';
             }
         }
 
+        if (p->x_axis == k->x_axis && p->y_axis == k->y_axis)
+        {
+            keyfound = true;
+        }
+
         if (m != 'u')
         {
-            // Push the current position to the undo stack only when it's a valid move
             stack.push(p->x_axis, p->y_axis);
         }
 
@@ -258,8 +270,6 @@ public:
                     }
 
                     p->ch = 'P';
-                    p_x = undo_x;
-                    p_y = undo_y;
                 }
             }
         }
@@ -267,17 +277,15 @@ public:
 
     void placeRandomObjects()
     {
-        srand(time(0)); // Seed the random number generator
-
-        // Place 'P', 'K', 'D'
+        srand(time(0)); 
         random_characters('P');
         random_characters('K');
         random_characters('D');
 
-        // Place coins (let's place 5 coins randomly)
         for (int i = 0; i < 5; i++)
         {
             random_characters('C');
+            random_characters('B');
         }
     }
 
@@ -296,60 +304,124 @@ public:
             temp = temp->next;
         }
 
-        if (temp->ch == '.' && temp->x_axis != k_x && temp->y_axis != k_y && temp->x_axis != d_x && temp->y_axis != d_y && p_x != temp->x_axis && p_y != temp->y_axis)
+        if (temp->ch == '.' &&
+            (k == nullptr || (temp->x_axis != k->x_axis && temp->y_axis != k->y_axis)) &&
+            (d == nullptr || (temp->x_axis != d->x_axis && temp->y_axis != d->y_axis)) &&
+            (p == nullptr || (temp->x_axis != p->x_axis && temp->y_axis != p->y_axis)))
         {
             if (c == 'P')
             {
                 p = temp;
                 temp->ch = c;
-                p_x = temp->x_axis;
-                p_y = temp->y_axis;
                 stack.push(p->x_axis, p->y_axis);
             }
 
             if (c == 'K')
             {
-                k_x = temp->x_axis;
-                k_y = temp->y_axis;
-                temp->ch = '.';
+                k = temp;
+                temp->ch = 'K';
             }
             if (c == 'D')
             {
-                d_x = temp->x_axis;
-                d_y = temp->y_axis;
-                temp->ch = '.';
+                d = temp; 
+                temp->ch = 'D';
             }
             if (c == 'C')
             {
                 temp->ch = c;
             }
+            if (c == 'B')
+            {
+                temp->ch = c;
+            }
+           
         }
         else
         {
             random_characters(c); // Retry if the spot is already taken
         }
+        if (p && k && d)
+        {
+            total_moves = distance_player_to_key() + distance_key_to_door();
+        }
     }
-    int distance()
+    int distance_key_to_door()
     {
-        dx = k_x - p_x;
-        dy = k_y - p_y;
-        d = dx + dy; // Retry if the spot is already taken
-        return d;
+        dx = d->x_axis - k->x_axis; 
+        if (dx < 0)
+        {
+            dx = -dx;
+        }
+        dy = d->y_axis - k->y_axis;
+        if (dy < 0)
+        {
+            dy = -dy;
+        }
+        return dx + dy;
     }
-    void displayMaze()
+    int distance_player_to_key()
     {
-        clear(); // Clear the screen
+        dx = k->x_axis - p->x_axis; 
+        if (dx < 0)
+        {
+            dx = -dx;
+        }
+        dy = k->y_axis - p->y_axis; 
+        if (dy < 0)
+        {
+            dy = -dy;
+        }
+        return dx + dy;
+    }
+
+    void displaymenu()
+    {
+        cout << "PLAY GAME" << endl;
+        int i;
+        cout << "press 1 for easy mode" << endl;
+        cin >> i;
+        if (i == 1)
+        {
+            moving();
+            playGame(10);
+        }
+    }
+    void moving()
+    {
+        printw("total moves %d", total_moves);
+        printw("\n");
+        i_d = move_d;
+        move_d = distance_player_to_key();
+        if (move_d <= i_d)
+        {
+            printw("moving closer");
+            printw("\n");
+        }
+        else if (move_d > i_d)
+        {
+            printw("moving away");
+            printw("\n");
+        }
+        printw("                    key status: %d", keyfound);
+        printw("\n");
+    }
+    void displayMaze(int n)
+    {
+        clear(); 
+        printw("display");
+        printw("\n");
+        moving();
         Node *row = head;
-        for (int i = 0; i < 12; i++)
+        for (int i = 0; i < n + 2; i++)
         {
             printw("# ");
         }
         printw("\n");
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < n; i++)
         {
             Node *temp = row;
             printw("# ");
-            for (int j = 0; j < 10; j++)
+            for (int j = 0; j < n; j++)
             {
                 printw("%c ", temp->ch);
                 temp = temp->next;
@@ -358,7 +430,7 @@ public:
             row = row->down;
             printw("\n");
         }
-        for (int i = 0; i < 12; i++)
+        for (int i = 0; i < n + 2; i++)
         {
             printw("# ");
         }
@@ -366,8 +438,7 @@ public:
         refresh(); // Refresh the screen to display the changes
     }
 
-    // Function to handle player movements in the game
-    void playGame()
+    void playGame(int n)
     {
         initscr();            // This function initializes the ncurses mode. It sets up the terminal to use ncurses
         cbreak();             // Disables line buffering, making each keypress immediately available to the program.
@@ -379,12 +450,15 @@ public:
         int moveKey;
         while (true)
         {
-            displayMaze();
-            moveKey = getch();
 
+            displayMaze(n);
+            moveKey = getch();
             if (moveKey == 'q') // quit
                 break;
-
+            else if (total_moves == 0)
+            {
+                break;
+            }
             move(moveKey);
         }
 
@@ -397,6 +471,6 @@ int main()
     maze m;
     m.insertnodes();
     m.placeRandomObjects();
-    m.playGame();
+    m.displaymenu();
     return 0;
 }
