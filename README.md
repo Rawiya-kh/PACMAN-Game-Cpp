@@ -30,8 +30,11 @@ To exit the game press q
 To exits the game over screen press e
 **screenshotS of game**
 ![Screenshot from 2024-10-20 22-56-52](https://github.com/user-attachments/assets/aa614914-3ae2-4e12-9048-bda00d354d22)
-![Screenshot from 2024-10-20 22-57-14](https://github.com/user-attachments/assets/7ff812d1-79c7-4337-9610-![Screenshot from 2024-10-20 22-57-31](https://github.com/user-attachments/assets/36f96494-470f-4d24-be11-f50931ccfea3)
-52a5c6b77658)
-![Screenshot from 2024-10-20 22-58-20](https://github.com/user-attachments/assets/a3dc8f72-00b9-44fd-be2b-cc0c5![Screenshot from 2024-10-20 23-04-55](https://github.com/user-attachments/assets/93f17fc9-713d-4dc8-adce-47cecd912644)
-ace6128)
+![Screenshot from 2024-10-20 22-57-14](https://github.com/user-attachments/assets/449cddcc-251e-4801-8ac0-425928ca634b)
+![Screenshot from 2024-10-20 22-57-31](https://github.com/user-attachments/assets/659df92c-9e66-4ad4-9753-67a1719cf26d)
+![Screenshot from 2024-10-20 22-58-20](https://github.com/user-attachments/assets/538705e1-93a1-48e8-9f35-1c3f2d405d5f)
+![Screenshot from 2024-10-20 23-04-12](https://github.com/user-attachments/assets/4beac031-8fe3-4972-9986-cebff2eecd54)
 ![Screenshot from 2024-10-20 23-04-12](https://github.com/user-attachments/assets/55bdd02f-8d98-41da-83da-a2c2746fa813)
+
+
+
