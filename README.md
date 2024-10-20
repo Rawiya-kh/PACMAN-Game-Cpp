@@ -28,7 +28,7 @@ Move the player by using arrow keys
 To undo pres U
 To exit the game press q
 To exits the game over screen press e
-**screenshotS of game**
+**screenshots of game**
 ![Screenshot from 2024-10-20 22-56-52](https://github.com/user-attachments/assets/aa614914-3ae2-4e12-9048-bda00d354d22)
 ![Screenshot from 2024-10-20 22-57-14](https://github.com/user-attachments/assets/449cddcc-251e-4801-8ac0-425928ca634b)
 ![Screenshot from 2024-10-20 22-57-31](https://github.com/user-attachments/assets/659df92c-9e66-4ad4-9753-67a1719cf26d)
