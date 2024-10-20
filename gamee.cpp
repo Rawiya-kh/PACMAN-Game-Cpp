@@ -2,7 +2,7 @@
 #include <ctime>
 #include <ncurses.h>
 using namespace std;
-
+// boxes of the grid contains
 struct Node
 {
     char ch;
@@ -13,6 +13,7 @@ struct Node
     int x_axis;
     int y_axis;
 };
+// node to push in the undo stack , and coins queue
 struct moveee
 {
     int x;
@@ -20,11 +21,7 @@ struct moveee
     char ch;
     moveee *next;
 };
-struct coins
-{
-    int x;
-    int y;
-};
+// queue to keep track of colleted coins
 class queue
 {
     moveee *front;
@@ -36,6 +33,7 @@ public:
         front = nullptr;
         tail = nullptr;
     }
+    // enqueue
     void enqueue(int xx, int yy, int c)
     {
         moveee *NN = new moveee;
@@ -52,15 +50,18 @@ public:
         tail->next = NN;
         tail = NN;
     }
+    // get the first node
     moveee *peek()
     {
         return front;
     }
+    // display the queue with ncurses functions
     void displayqueue()
     {
         moveee *temp = front;
         while (temp != nullptr)
         {
+            //%d to display integers and %c for characters
             printw("(%d, %d,%c) ", temp->x, temp->y, temp->ch);
             temp = temp->next;
         }
@@ -75,12 +76,13 @@ public:
     {
         top = nullptr;
     }
+    // push stack
     void push(int xx, int yy, int c)
     {
         moveee *NN = new moveee;
         NN->x = xx;
         NN->y = yy;
-        NN->ch == c;
+        NN->ch = c;
         NN->next = nullptr;
         if (top == nullptr)
         {
@@ -92,6 +94,7 @@ public:
             top = NN;
         }
     }
+    // pop stack
     void pop()
     {
         if (top == nullptr)
@@ -102,10 +105,12 @@ public:
         top = temp->next;
         delete temp;
     }
+    // get x axis of top
     int top_x()
     {
         return top->x;
     }
+    // get y axis of top
     int top_y()
     {
         return top->y;
@@ -117,28 +122,26 @@ public:
 };
 class maze
 {
-    stack undo;
-    queue coin;
-    Node *head;
-    Node *p;
-    Node *k;
-    Node *d;
-    Node *p_i;
-    int b_x, b_y;
-    int dx, dy, i_d, move_k, move_d;
-    coins *c1, *c2, *c3, *c4, *c5;
-    int coin_count;
-    bool keyfound;
-    bool door;
-    bool bomb;
-    int count;
-    int undo_count;
-    int total_moves;
-    int level;
-    int score;
+    stack undo;         // stack object
+    queue coin;         // queue object
+    Node *head;         // head of the grid
+    Node *p;            // pointer for player
+    Node *k;            // key pointer
+    Node *d;            // door pointer
+    Node *p_i;          // initial position of the player for displaying original grid at last
+    int dx, dy;         // coordinates of door
+    int i_d;            // initial position of key and door used to compare
+    int move_k, move_d; // new position of key and door
+    bool keyfound;      // key flag
+    bool door;          // door flag
+    bool bomb;          // bomb flag
+    int undo_count;     // count for undo moves
+    int total_moves;    // count for total moves
+    int level;          // difficulty level indicator
+    int score;          // score count
 
 public:
-    maze()
+    maze() // constructor
     {
         head = nullptr;
         p = nullptr;
@@ -147,9 +150,7 @@ public:
         keyfound = false;
         door = false;
         bomb = false;
-        undo_count = 0;
         total_moves = 0;
-        coin_count = 0;
         score = 0;
     }
 
@@ -171,8 +172,8 @@ public:
         else
         {
             Node *temp = head;
-
-            for (int row = 0; row < i; row++) // going to the exact row where we have to insert next node
+            // going to the exact row where we have to insert next node
+            for (int row = 0; row < i; row++)
             {
                 temp = temp->down;
             }
@@ -189,7 +190,7 @@ public:
             // If j == 0, inserting at the beginning of a new row
             else
             {
-                // Find the last node at j=0 index and place new node uder it
+                // Find the last node at j=0 index and place new node under it
                 Node *Upper_node = head;
                 for (int row = 0; row < i - 1; row++)
                 {
@@ -202,25 +203,28 @@ public:
                     NN->up = Upper_node;
                 }
             }
-
+            // making links to the NN
             if (i > 0 && j > 0)
             {
+                // moving in a row to reach at the exact row above row of newnode
                 Node *temp_up = head;
                 for (int row = 0; row < i - 1; row++)
                 {
                     temp_up = temp_up->down;
                 }
+                // moving in that particular row to find the node exaxt above the NN
                 Node *col_up = temp_up;
                 for (int col = 0; col < j; col++)
                 {
                     col_up = col_up->next;
                 }
+                // making down link and up link
                 col_up->down = NN;
                 NN->up = col_up;
             }
         }
     }
-
+    // i, j of nodes instertion
     void insertnodes(int n)
     {
         for (int i = 0; i < n; i++)
@@ -231,36 +235,65 @@ public:
             }
         }
     }
+    // set level
     void set_level(int l)
     {
         level = l;
     }
+    // get level
     int get_level()
     {
         return level;
     }
+    // function to remove previous coins
+    void remove_old_coins()
+    {
+        Node *row = head;
+        while (row != nullptr) // till last row
+        {
+            Node *temp = row;
+            while (temp != nullptr) // till last col
+            {
+                if (temp->ch == 'C') // checking each node whether it contains C
+                {
+                    temp->ch = '.';
+                }
+                temp = temp->next;
+            }
+            row = row->down;
+        }
+    }
+    // adding new coins raandomly
+    void new_coins(int n)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            random_characters('C', n);
+        }
+    }
+    // move function
     void move(int m, int n)
     {
         if (m == KEY_RIGHT)
         {
 
-            if (p->next != nullptr)
+            if (p->next != nullptr) // if right node exists
             {
-                total_moves--;
-                p->ch = '.';
-                if (p->next->ch == 'C')
+                total_moves--;          // moves decrement
+                p->ch = '.';            // placing . at the prev player position
+                if (p->next->ch == 'C') // if next node conatins coin
                 {
                     coin.enqueue(p->next->x_axis, p->next->y_axis, p->next->ch);
-                    count++;
+                    undo_count++; // bonus undo at coin
                     score += 2;
                 }
-                if (p->next->ch == 'B')
+                if (p->next->ch == 'B') // if next node is bomb
                 {
                     bomb = true;
-                    coin.enqueue(p->next->x_axis, p->next->y_axis, p->next->ch);
+                    coin.enqueue(p->next->x_axis, p->next->y_axis, p->next->ch); // bomb enqueue (last node)
                 }
-                p = p->next;
-                p->ch = 'P';
+                p = p->next; // moving p to new position
+                p->ch = 'P'; // placing P there
             }
         }
         else if (m == KEY_UP)
@@ -273,7 +306,7 @@ public:
                 if (p->up->ch == 'C')
                 {
                     coin.enqueue(p->up->x_axis, p->up->y_axis, p->up->ch);
-                    count++;
+                    undo_count++;
                     score += 2;
                 }
                 if (p->up->ch == 'B')
@@ -295,7 +328,7 @@ public:
                 if (p->down->ch == 'C')
                 {
                     coin.enqueue(p->down->x_axis, p->down->y_axis, p->down->ch);
-                    count++;
+                    undo_count++;
                     score += 2;
                 }
                 if (p->down->ch == 'B')
@@ -317,7 +350,7 @@ public:
                 if (p->prev->ch == 'C')
                 {
                     coin.enqueue(p->prev->x_axis, p->prev->y_axis, p->prev->ch);
-                    count++;
+                    undo_count++;
                     score += 2;
                 }
                 if (p->prev->ch == 'B')
@@ -330,56 +363,61 @@ public:
             }
         }
 
-        if (p->x_axis == k->x_axis && p->y_axis == k->y_axis)
+        if (p->x_axis == k->x_axis && p->y_axis == k->y_axis) // if player lands on the key
         {
             keyfound = true;
         }
-        if (p->x_axis == d->x_axis && p->y_axis == d->y_axis && keyfound == 1)
+        if (p->x_axis == d->x_axis && p->y_axis == d->y_axis && keyfound == 1) // if key found and player lands on door
         {
             door = true;
         }
+        if (total_moves % 5 == 0) // new coins appearing when a multiple of 5 occurs in total moves
+        {
+            remove_old_coins();
+            new_coins(n);
+        }
 
-        if (m != 'u')
+        if (m != 'u') // if not undo move then push every move into the stack
         {
             undo.push(p->x_axis, p->y_axis, p->ch);
         }
 
-        if (m == 'u' && undo_count != count)
+        if (m == 'u' && undo_count != 0) // if undo move and undo moves >0
         {
-            if (!undo.isempty())
+            if (!undo.isempty()) // if stack is not empty
             {
-                undo.pop();
+                undo.pop(); // pop the current position of the player
 
-                if (!undo.isempty())
+                if (!undo.isempty()) // if still not empty stack
                 {
 
-                    count--;
-                    int undo_x = undo.top_x();
+                    undo_count--;              // undo decrement
+                    int undo_x = undo.top_x(); // storing the undo move coordinates in variables
                     int undo_y = undo.top_y();
 
-                    p->ch = '.';
+                    p->ch = '.'; // making curr p empty spot
 
-                    while (p->x_axis != undo_x || p->y_axis != undo_y)
+                    while (p->x_axis != undo.top_x() || p->y_axis != undo_y) // till the player doesnot reaches the undo position
                     {
-                        if (p->x_axis < undo_x)
+                        if (p->x_axis < undo_x) // if p->x is less the undo_x the players current move must be up so moving down
                         {
                             p = p->down;
                         }
-                        else if (p->x_axis > undo_x)
+                        else if (p->x_axis > undo_x) // the players current move must be down so moving up
                         {
                             p = p->up;
                         }
-                        else if (p->y_axis < undo_y)
+                        else if (p->y_axis < undo_y) // the players current move must be prev so moving next
                         {
                             p = p->next;
                         }
-                        else if (p->y_axis > undo_y)
+                        else if (p->y_axis > undo_y) // the players current move must be next so moving prev
                         {
                             p = p->prev;
                         }
                     }
 
-                    p->ch = 'P';
+                    p->ch = 'P'; // chaning the character at new p location
                 }
             }
         }
@@ -387,12 +425,13 @@ public:
 
     void placeRandomObjects(int n)
     {
-        srand(time(0));
+        srand(time(0)); // random generator
+        // calling random_characters function with P,K,D,C,B
         random_characters('P', n);
         random_characters('K', n);
         random_characters('D', n);
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 5; i++) // 5 coins and bombs
         {
             random_characters('C', n);
             random_characters('B', n);
@@ -405,26 +444,27 @@ public:
             // Add moves based on the level
             if (level == 1)
             {
-                count = 6;
+                undo_count = 6;
                 total_moves += 6; // Easy mode
             }
             else if (level == 2)
             {
-                count = 4;
+                undo_count = 4;
                 total_moves += 2; // Medium mode
             }
             else
-                count = 1;
+                undo_count = 1;
         }
     }
 
     void random_characters(char c, int n)
     {
 
-        int r_x = rand() % n;
-        int r_y = rand() % n;
+        int r_x = rand() % n; // random x axis
+        int r_y = rand() % n; // random y axis
 
         Node *temp = head;
+        // moving to the random node with the coordinates generated
         for (int i = 0; i < r_x; i++)
         {
             temp = temp->down;
@@ -433,29 +473,28 @@ public:
         {
             temp = temp->next;
         }
-
+        // if spot is empty and is not already taken and is not taken by invisible key and door
         if (temp->ch == '.' &&
             (k == nullptr || (temp->x_axis != k->x_axis && temp->y_axis != k->y_axis)) &&
-            (d == nullptr || (temp->x_axis != d->x_axis && temp->y_axis != d->y_axis)) &&
-            (p == nullptr || (temp->x_axis != p->x_axis && temp->y_axis != p->y_axis)))
+            (d == nullptr || (temp->x_axis != d->x_axis && temp->y_axis != d->y_axis)))
         {
             if (c == 'P')
             {
-                p_i = temp;
+                p_i = temp; // initilizing p_i and p to where the P is randomly placed
                 p = temp;
                 temp->ch = c;
-                undo.push(p->x_axis, p->y_axis, p->ch);
+                undo.push(p->x_axis, p->y_axis, p->ch); // pushing the initial position of the player
             }
 
             if (c == 'K')
             {
                 k = temp;
-                temp->ch = 'K';
+                temp->ch = '.'; // making key invisible
             }
             if (c == 'D')
             {
                 d = temp;
-                temp->ch = 'D';
+                temp->ch = '.'; // making key invisible
             }
             if (c == 'C')
             {
@@ -468,10 +507,10 @@ public:
         }
         else
         {
-            random_characters(c, n);
+            random_characters(c, n); // if spot already taken call function again
         }
     }
-
+    // functions for distances
     int distance_player_to_door()
     {
         dx = d->x_axis - p->x_axis;
@@ -517,7 +556,7 @@ public:
 
     void displaymenu(int n)
     {
-        // initializing move_k and move_d
+        // initializing move_k and move_d to the inital distances of player to key and player to door
         move_k = distance_player_to_key();
         move_d = distance_player_to_door();
         playGame(n);
@@ -525,15 +564,15 @@ public:
     void moving()
     {
         printw("total moves %d", total_moves);
-        printw("               undo left: %d", count);
+        printw("               undo left: %d", undo_count);
         printw("\n");
+        printw("hint:");
 
         if (!keyfound)
         {
-            i_d = move_k;
-            move_k = distance_player_to_key();
-            printw("hint:");
-            if (move_k <= i_d)
+            i_d = move_k;                      // storing prev distance
+            move_k = distance_player_to_key(); // storing new distance
+            if (move_k <= i_d)                 // comparing new and prev distance
             {
                 printw("moving closer to key");
                 printw("\n");
@@ -546,10 +585,9 @@ public:
         }
         else
         {
-
-            i_d = move_d;
-            move_d = distance_player_to_door();
-            if (move_d <= i_d)
+            i_d = move_d;                       // storing prev distance
+            move_d = distance_player_to_door(); // storing new distance
+            if (move_d <= i_d)                  // comparing new and prev distance
             {
                 printw("moving closer to door ");
                 printw("\n");
@@ -565,35 +603,38 @@ public:
     }
     void displayMaze(int n)
     {
-        clear();
-        if (door)
+        clear();  // clear the prev screen
+        if (door) // if door found end the game by displaying this
         {
             if (total_moves > 0)
             {
-                score += 1;
+                score += 1; // if end with moves left
             }
-            gameover(n);
+            gameover(n); // displays initial positions of C P K and D
             printw("you won!!! \ncollected items:");
-            coin.displayqueue();
+            coin.displayqueue(); // display coin queue
+            printw("\nthis was the original state of the game!!\n");
         }
         if (bomb)
         {
             gameover(n);
             printw("Game over \ncollected items:");
             coin.displayqueue();
+            printw("\nthis was the original state of the game!!\n");
         }
         if (total_moves == 0)
         {
             gameover(n);
             printw("Game over \ncollected items:");
             coin.displayqueue();
+            printw("\nthis was the original state of the game!!\n");
         }
         printw("\n");
         printw("score: %d\n", score);
-        if (!door && !bomb && total_moves != 0)
+        if (!door && !bomb && total_moves != 0) // if game is conitnue call moving function for hint
             moving();
         Node *row = head;
-        for (int i = 0; i < n + 2; i++)
+        for (int i = 0; i < n + 2; i++) // upper border
         {
             printw("# ");
         }
@@ -611,7 +652,7 @@ public:
             row = row->down;
             printw("\n");
         }
-        for (int i = 0; i < n + 2; i++)
+        for (int i = 0; i < n + 2; i++) // lower border
         {
             printw("# ");
         }
@@ -620,11 +661,11 @@ public:
     }
     void gameover(int n)
     {
-        clear(); // Clear the screen
-        moveee *c = coin.peek();
+        clear();                 // Clear the screen
+        moveee *c = coin.peek(); // getting the first node in the queue and placing the coins at the collected places
         Node *row = head;
 
-        // resenting the coin positions where they were collected
+        // reseting the coin positions where they were collected
         for (int i = 0; i < n; i++)
         {
             Node *temp = row;
@@ -664,10 +705,10 @@ public:
         keypad(stdscr, TRUE); // Enable special keys.
 
         int moveKey;
-        while (!bomb && !door && total_moves != 0)
+        while (!bomb && !door && total_moves != 0) // game continue
         {
             displayMaze(n);
-            moveKey = getch();
+            moveKey = getch(); // getting arrowkeys and function keys using ncurses function
             if (moveKey == 'q')
                 break;
 
@@ -679,7 +720,7 @@ public:
             displayMaze(n);
             printw("\nPress 'e' to exit.");
             refresh();
-            exitKey = getch();
+            exitKey = getch(); // getting the exit key
         }
         endwin(); // End ncurses mode
     }
